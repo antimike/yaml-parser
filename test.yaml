@@ -1,0 +1,39 @@
+---
+- top-level item
+- itemdict:
+  - subitem
+  - another subitem
+first:
+  - item
+  - item
+  - item
+  - dict:
+    - subitem
+    - random
+    - dict2:
+      - foo
+      - bar
+      - baz:
+        - curly
+        - moe
+      - burp
+second:
+  - another item
+  - item redux
+...
+This is some random, non-YAML-flavored text.
+one:
+  two:
+    three:
+     four
+:
+one:
+  two:
+    three:
+     four
+:
+one:
+  two:
+    three:
+     four
+:
