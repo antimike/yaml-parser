@@ -1,7 +1,7 @@
 # YAML Parser
 
 ## Summary
-Tools for parsing and writing YAML configuration files and frontmatter with minimal dependencies (Bash).
+Tools for parsing and writing YAML configuration files and frontmatter with minimal dependencies.
 
 ## Design goals
 * Extensible and hackable syntax:
@@ -29,6 +29,7 @@ Tools for parsing and writing YAML configuration files and frontmatter with mini
     * Probably already part of standard YAML...?
 * YAML references
 * `include`-style directive
+* Efficient partial traversal: should support searching for a specific map key or list item "address," e.g.
 
 ### Fancy
 * Tags
@@ -68,6 +69,65 @@ Elements, per [the docs][yaml-docs]:
 * <a name="native-datastructure"></a> Native datastructure
     * opaque program data
 
+### Challenges
+* How to efficiently represent graphs in Bash?
+    * Perhaps use awk instead?
+        * e.g., `SYMTAB` can be used to construct rudimentary "pointers" which can be stored in string-indexed arrays
+
+### Ideas
+* "Generic parser" based on input DFA grammar?
+    * Equivalent to developing markup for general [lm-diagrams][lm-diagrams]
+    * Well-understood problem: Could use ANTLR, Bison, Yacc, etc.
+    * .g4 file format to represent generative grammar
+* Can use `@include` directive (`gawk`-specific) to break up implementation
+* Use "tea-leaves"-style sorting: insert extra numerical fields which can easily be sorted (e.g., based on indentation)
+* "Standard" decomposition (see, e.g., [this parser tutorial][parser-tutorial]):
+    * Reader
+        * `peek()`
+        * `isEOF()`
+        * `consume(k)`
+    * Lexer / Tokenizer
+        * Whitespace and comments need to be sensibly handled at this level
+        * Can write whitespace tokens to dedicated "whitestream," e.g.
+        * `peek()`
+        * `consume()`
+    * Parser
+        * `parse()`
+    * Error handler
+
+### Grammar
+
+Simplified YAML grammar in [BNF notation](#bnf):
+```bnf
+<yaml> ::= <scalar> | <map> | <array>
+<map> ::= <kv-pair> \n <map> | ""
+<array> ::= <item> \n <array> | ""
+<scalar> ::= <escaped-line> \n <scalar> | TEXT
+<kv-pair> ::= <key> TEXT | <key> \n <yaml>
+<key> ::= TEXT ':'
+<escaped-line> ::= TEXT '|'
+<label> ::=
+<reference> ::=
+```
+
+#### Unsupported YAML features
+* Uniqueness of map keys?
+* Sequence (i.e., **unordered** arrays)
+
+#### Grammar specification metalanguage
+<a name="antlr"></a> Simplified ANTLR:
+* Terminals should be ALLCAPS, nonterminals lowercase
+* Can use `|` to represent branching
+* Production rules:
+    * `nonterm : R(nonterms, terms) ;`, where `R(...)` denotes a regexp built out of its arguments
+* Non-ANTLR symbols / conveniences to simplify use with `awk` and `sed`:
+    * `start` and `end` symbols / nonterminals
+
+<a name="bnf"></a> BNF-style:
+* `<nonterminal> ::= expr1 | expr2 | ... | exprn`
+* "Parameterized" production rules?
+    * e.g., parameterizing a YAML root nonterminal by the indentation level, as in `<yaml{n}>` or `<yaml[n]>`
+
 ## Intersecting projects
 * Tags:
     * Management / composition library
@@ -80,3 +140,5 @@ Elements, per [the docs][yaml-docs]:
 ---
 
 [yaml-docs]: https://yaml.org/spec/1.2/spec.html
+[parser-tutorial]: https://medium.com/swlh/writing-a-parser-getting-started-44ba70bb6cc9
+[lm-diagrams]: http://languagemachine.sourceforge.net/picturebook.html
